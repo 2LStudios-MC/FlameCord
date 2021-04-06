@@ -1,0 +1,23 @@
+From a3cd37942bd4883079975cb1243bf0726ddff8b3 Mon Sep 17 00:00:00 2001
+From: Luccboy <58391278+Luccboy@users.noreply.github.com>
+Date: Tue, 6 Apr 2021 14:09:33 +0200
+Subject: [PATCH] Don't call wrong ServerSwitchEvents
+
+
+diff --git a/proxy/src/main/java/net/md_5/bungee/ServerConnector.java b/proxy/src/main/java/net/md_5/bungee/ServerConnector.java
+index a7e8f884..7b1a0f73 100644
+--- a/proxy/src/main/java/net/md_5/bungee/ServerConnector.java
++++ b/proxy/src/main/java/net/md_5/bungee/ServerConnector.java
+@@ -405,7 +405,8 @@ public class ServerConnector extends PacketHandler
+         user.setServer( server );
+         ch.getHandle().pipeline().get( HandlerBoss.class ).setHandler( new DownstreamBridge( bungee, user, server ) );
+ 
+-        bungee.getPluginManager().callEvent( new ServerSwitchEvent( user, from ) );
++        // FlameCord - Don't call wrong ServerSwitchEvents
++        if ( from != null ) bungee.getPluginManager().callEvent( new ServerSwitchEvent( user, from ) );
+ 
+         thisState = State.FINISHED;
+ 
+-- 
+2.30.0.windows.2
+
