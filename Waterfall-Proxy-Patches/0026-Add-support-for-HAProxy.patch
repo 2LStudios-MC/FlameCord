@@ -1,4 +1,4 @@
-From 694485e3ed1d2fb278515e00d35de401e2cec6e9 Mon Sep 17 00:00:00 2001
+From d91ae1592029cb7d1ae91469dd2387e174b5e93d Mon Sep 17 00:00:00 2001
 From: FixedDev <gilbertodamian14@gmail.com>
 Date: Sat, 17 Apr 2021 17:13:25 -0500
 Subject: [PATCH] Add support for HAProxy The firewall on FlameCord had a
@@ -8,7 +8,7 @@ Subject: [PATCH] Add support for HAProxy The firewall on FlameCord had a
 
 
 diff --git a/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java b/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java
-index 048ac826..3c378936 100644
+index 048ac826..72d84454 100644
 --- a/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java
 +++ b/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java
 @@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
@@ -55,7 +55,7 @@ index 048ac826..3c378936 100644
 -        // FlameCord - Firewall system
 -        final SocketAddress remoteAddress = ctx.channel().remoteAddress();
 +        // FlameCord - Add support for HaProxy.
-+        if (fastIsNotProxied()) {
++        if (fastIsNotProxied(ctx.channel())) {
 +            // FlameCord - Firewall system
 +            final SocketAddress remoteAddress = ctx.channel().remoteAddress();
  
@@ -97,40 +97,63 @@ index 048ac826..3c378936 100644
          if ( handler != null )
          {
              PacketWrapper packet = (PacketWrapper) msg;
-@@ -230,4 +256,33 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
+@@ -230,4 +256,27 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
          // FlameCord - Close even if the channel isn't active
          ctx.close();
      }
 +
 +    // FlameCord - Add support for HaProxy.
-+    private boolean fastIsNotProxied() {
-+        final ProxyConfig proxyConfig = ProxyServer.getInstance().getConfig();
++    private boolean fastIsNotProxied(Channel ch) {
++        final ListenerInfo listenerInfo = ch.attr( PipelineUtils.LISTENER ).get();
 +
-+        for (final ListenerInfo listener : proxyConfig.getListeners()) {
-+            if(listener.isProxyProtocol()){
-+                return true;
-+            }
++        if (listenerInfo != null) {
++            return listenerInfo.isProxyProtocol();
 +        }
-+
 +        return false;
 +    }
 +
 +    // FlameCord - Add support for HaProxy.
 +    private boolean isProxied(ChannelHandlerContext context) {
-+        final ProxyConfig proxyConfig = ProxyServer.getInstance().getConfig();
-+
 +        final Channel channel = context.channel();
-+        final SocketAddress localAddress = channel.localAddress();
 +
-+        for (final ListenerInfo listener : proxyConfig.getListeners()) {
-+            if (listener.getSocketAddress().equals(localAddress) && listener.isProxyProtocol()) {
-+                return true;
-+            }
++        final ListenerInfo listenerInfo = channel.attr( PipelineUtils.LISTENER ).get();
++
++        if (listenerInfo != null) {
++            return listenerInfo.isProxyProtocol();
 +        }
 +
 +        return false;
 +    }
  }
+diff --git a/proxy/src/main/java/net/md_5/bungee/netty/PipelineUtils.java b/proxy/src/main/java/net/md_5/bungee/netty/PipelineUtils.java
+index 84302b32..936d42c9 100644
+--- a/proxy/src/main/java/net/md_5/bungee/netty/PipelineUtils.java
++++ b/proxy/src/main/java/net/md_5/bungee/netty/PipelineUtils.java
+@@ -64,9 +64,13 @@ public class PipelineUtils
+         {
+             SocketAddress remoteAddress = ( ch.remoteAddress() == null ) ? ch.parent().localAddress() : ch.remoteAddress();
+ 
+-            // FlameCord - Firewall system
+-            if (remoteAddress != null && FlameCord.getInstance().getFirewallManager().isFirewalled(remoteAddress)) {
+-                throw new FirewallException(remoteAddress);
++            ListenerInfo listener = ch.attr( LISTENER ).get();
++
++            if (!listener.isProxyProtocol()) {
++                // FlameCord - Firewall system
++                if (remoteAddress != null && FlameCord.getInstance().getFirewallManager().isFirewalled(remoteAddress)) {
++                    throw new FirewallException(remoteAddress);
++                }
+             }
+ 
+             if ( BungeeCord.getInstance().getConnectionThrottle() != null && BungeeCord.getInstance().getConnectionThrottle().throttle( remoteAddress ) )
+@@ -74,7 +78,6 @@ public class PipelineUtils
+                 ch.close();
+                 return;
+             }
+-            ListenerInfo listener = ch.attr( LISTENER ).get();
+ 
+             if ( BungeeCord.getInstance().getPluginManager().callEvent( new ClientConnectEvent( remoteAddress, listener ) ).isCancelled() )
+             {
 -- 
 2.29.2.windows.2
 
