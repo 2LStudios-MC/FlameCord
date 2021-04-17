@@ -1,4 +1,4 @@
-From 98c37161857726e7e7172125213f03ad2f71a5a3 Mon Sep 17 00:00:00 2001
+From 694485e3ed1d2fb278515e00d35de401e2cec6e9 Mon Sep 17 00:00:00 2001
 From: FixedDev <gilbertodamian14@gmail.com>
 Date: Sat, 17 Apr 2021 17:13:25 -0500
 Subject: [PATCH] Add support for HAProxy The firewall on FlameCord had a
@@ -8,7 +8,7 @@ Subject: [PATCH] Add support for HAProxy The firewall on FlameCord had a
 
 
 diff --git a/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java b/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java
-index 048ac826..89975364 100644
+index 048ac826..3c378936 100644
 --- a/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java
 +++ b/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java
 @@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
@@ -46,7 +46,7 @@ index 048ac826..89975364 100644
          Preconditions.checkArgument( handler != null, "handler" );
          this.handler = handler;
 +
-+		firstRead = false;
++		firstRead = true;
      }
  
      @Override
