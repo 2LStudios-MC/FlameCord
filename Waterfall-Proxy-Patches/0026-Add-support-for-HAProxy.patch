@@ -1,0 +1,136 @@
+From 98c37161857726e7e7172125213f03ad2f71a5a3 Mon Sep 17 00:00:00 2001
+From: FixedDev <gilbertodamian14@gmail.com>
+Date: Sat, 17 Apr 2021 17:13:25 -0500
+Subject: [PATCH] Add support for HAProxy The firewall on FlameCord had a
+ problem, caused by the premature cancellation of connections when proxy
+ protocol is active. This caused every connection to fail when FlameCord was
+ behind one or more HAProxy instances and an exception was raised.
+
+
+diff --git a/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java b/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java
+index 048ac826..89975364 100644
+--- a/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java
++++ b/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java
+@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
+ 
+ import dev._2lstudios.flamecord.FlameCord;
+ import dev._2lstudios.flamecord.firewall.FirewallException;
++import io.netty.channel.Channel;
+ import io.netty.channel.ChannelHandlerContext;
+ import io.netty.channel.ChannelInboundHandlerAdapter;
+ import io.netty.handler.codec.CorruptedFrameException;
+@@ -12,9 +13,13 @@ import io.netty.handler.codec.haproxy.HAProxyMessage;
+ import io.netty.handler.timeout.ReadTimeoutException;
+ import java.io.IOException;
+ import java.net.InetSocketAddress;
++import java.net.ProxySelector;
+ import java.net.SocketAddress;
+ import java.util.logging.Level;
++
++import net.md_5.bungee.api.ProxyConfig;
+ import net.md_5.bungee.api.ProxyServer;
++import net.md_5.bungee.api.config.ListenerInfo;
+ import net.md_5.bungee.connection.CancelSendSignal;
+ import net.md_5.bungee.connection.InitialHandler;
+ import net.md_5.bungee.connection.PingHandler;
+@@ -31,6 +36,7 @@ import net.md_5.bungee.util.QuietException;
+ public class HandlerBoss extends ChannelInboundHandlerAdapter
+ {
+ 
++	private boolean firstRead;
+     private ChannelWrapper channel;
+     private PacketHandler handler;
+ 
+@@ -38,16 +44,21 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
+     {
+         Preconditions.checkArgument( handler != null, "handler" );
+         this.handler = handler;
++
++		firstRead = false;
+     }
+ 
+     @Override
+     public void channelActive(ChannelHandlerContext ctx) throws Exception
+     {
+-        // FlameCord - Firewall system
+-        final SocketAddress remoteAddress = ctx.channel().remoteAddress();
++        // FlameCord - Add support for HaProxy.
++        if (fastIsNotProxied()) {
++            // FlameCord - Firewall system
++            final SocketAddress remoteAddress = ctx.channel().remoteAddress();
+ 
+-        if (remoteAddress != null && FlameCord.getInstance().getFirewallManager().isFirewalled(remoteAddress)) {
+-            throw new FirewallException(remoteAddress);
++            if (remoteAddress != null && FlameCord.getInstance().getFirewallManager().isFirewalled(remoteAddress)) {
++                throw new FirewallException(remoteAddress);
++            }
+         }
+ 
+         if ( handler != null )
+@@ -111,13 +122,28 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
+                 } );
+ 
+                 channel.setRemoteAddress( newAddress );
+-            } finally 
++            } finally
+             {
+             proxy.release();
+             }
+             return;
+         }
+ 
++        // FlameCord - Add support for HaProxy.
++        if (firstRead) {
++            if (isProxied(ctx)) {
++                // FlameCord - Firewall system
++                final SocketAddress remoteAddress = ctx.channel().remoteAddress();
++
++                if (remoteAddress != null && FlameCord.getInstance().getFirewallManager().isFirewalled(remoteAddress)) {
++                    throw new FirewallException(remoteAddress);
++                }
++            }
++
++            firstRead = false;
++        }
++
++
+         if ( handler != null )
+         {
+             PacketWrapper packet = (PacketWrapper) msg;
+@@ -230,4 +256,33 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
+         // FlameCord - Close even if the channel isn't active
+         ctx.close();
+     }
++
++    // FlameCord - Add support for HaProxy.
++    private boolean fastIsNotProxied() {
++        final ProxyConfig proxyConfig = ProxyServer.getInstance().getConfig();
++
++        for (final ListenerInfo listener : proxyConfig.getListeners()) {
++            if(listener.isProxyProtocol()){
++                return true;
++            }
++        }
++
++        return false;
++    }
++
++    // FlameCord - Add support for HaProxy.
++    private boolean isProxied(ChannelHandlerContext context) {
++        final ProxyConfig proxyConfig = ProxyServer.getInstance().getConfig();
++
++        final Channel channel = context.channel();
++        final SocketAddress localAddress = channel.localAddress();
++
++        for (final ListenerInfo listener : proxyConfig.getListeners()) {
++            if (listener.getSocketAddress().equals(localAddress) && listener.isProxyProtocol()) {
++                return true;
++            }
++        }
++
++        return false;
++    }
+ }
+-- 
+2.29.2.windows.2
+

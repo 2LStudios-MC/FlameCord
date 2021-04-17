@@ -1,4 +1,4 @@
-From ed57b22b9bae1cabd74f9dd91ebe83389d6223ee Mon Sep 17 00:00:00 2001
+From 88c6dc7d55924aa96727a2fe87940b6369b734a9 Mon Sep 17 00:00:00 2001
 From: Juan Cruz Linsalata <LinsaFTW@users.noreply.github.com>
 Date: Mon, 12 Oct 2020 15:40:53 -0300
 Subject: [PATCH] FlameCord General Patch
@@ -667,7 +667,7 @@ index 00000000..fa0b59c2
 +    }
 +}
 diff --git a/proxy/src/main/java/net/md_5/bungee/BungeeCord.java b/proxy/src/main/java/net/md_5/bungee/BungeeCord.java
-index 3e4ebfc5..316790ee 100644
+index 9c769fb0..e7405890 100644
 --- a/proxy/src/main/java/net/md_5/bungee/BungeeCord.java
 +++ b/proxy/src/main/java/net/md_5/bungee/BungeeCord.java
 @@ -9,6 +9,10 @@ import com.google.common.collect.Sets;
@@ -819,7 +819,7 @@ index 3e4ebfc5..316790ee 100644
 +    }
  }
 diff --git a/proxy/src/main/java/net/md_5/bungee/ServerConnector.java b/proxy/src/main/java/net/md_5/bungee/ServerConnector.java
-index e90237ac..3cfef373 100644
+index 7b99c466..af242603 100644
 --- a/proxy/src/main/java/net/md_5/bungee/ServerConnector.java
 +++ b/proxy/src/main/java/net/md_5/bungee/ServerConnector.java
 @@ -1,6 +1,8 @@
@@ -839,7 +839,7 @@ index e90237ac..3cfef373 100644
  import net.md_5.bungee.protocol.DefinedPacket;
  import net.md_5.bungee.protocol.MinecraftDecoder;
  import net.md_5.bungee.protocol.PacketWrapper;
-@@ -161,7 +164,13 @@ public class ServerConnector extends PacketHandler
+@@ -163,7 +166,13 @@ public class ServerConnector extends PacketHandler
      {
          if ( packet.packet == null )
          {
@@ -1097,5 +1097,5 @@ index a54da9c3..84302b32 100644
              ctx.close();
          }
 -- 
-2.20.1
+2.29.2.windows.2
 
