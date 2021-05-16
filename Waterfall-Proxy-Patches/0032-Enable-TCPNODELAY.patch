@@ -1,0 +1,23 @@
+From de525492343a4dc175d75b7300a5a9fb01e60223 Mon Sep 17 00:00:00 2001
+From: abhiram <abhithegamer2019@gmail.com>
+Date: Sun, 16 May 2021 21:14:10 +0530
+Subject: [PATCH] Enable TCPNODELAY
+
+
+diff --git a/proxy/src/main/java/net/md_5/bungee/BungeeCord.java b/proxy/src/main/java/net/md_5/bungee/BungeeCord.java
+index bb6aff94..30ae2087 100644
+--- a/proxy/src/main/java/net/md_5/bungee/BungeeCord.java
++++ b/proxy/src/main/java/net/md_5/bungee/BungeeCord.java
+@@ -380,6 +380,9 @@ public class BungeeCord extends ProxyServer
+             new ServerBootstrap()
+                     .channel( PipelineUtils.getServerChannel( info.getSocketAddress() ) )
+                     .option( ChannelOption.SO_REUSEADDR, true ) // TODO: Move this elsewhere!
++                    // FlameCord start - Enable TCP NO DELAY
++                    .option( ChannelOption.TCP_NODELAY, true )
++                    // FlameCord end
+                     .childAttr( PipelineUtils.LISTENER, info )
+                     .childHandler( PipelineUtils.SERVER_CHILD )
+                     .group( bossEventLoopGroup, workerEventLoopGroup )
+-- 
+2.26.2.windows.1
+
